@@ -5,9 +5,11 @@ description: Sprint planning methodology implementing the Trellis Architecture's
 
 # Grove Foundation Loop — Sprint Methodology
 
-A structured approach to software development implementing the **Trellis Architecture** and **DEX (Declarative Exploration)** standard. Produces 8 planning artifacts, embeds automated testing, and enables clean handoff to execution agents.
+A structured approach to software development implementing the **Trellis Architecture** and **DEX (Declarative Exploration)** standard. Produces 8 planning artifacts, embeds automated testing as continuous process, and enables clean handoff to execution agents.
 
-## Trellis Architecture Alignment
+## Core Principles
+
+### 1. Trellis Architecture Alignment
 
 The Foundation Loop implements the four DEX Stack Standards:
 
@@ -21,6 +23,31 @@ The Foundation Loop implements the four DEX Stack Standards:
 **The First Order Directive:** *Separation of Exploration Logic from Execution Capability.*
 - Build the engine that reads the map; do not build the map into the engine.
 - If you're hardcoding domain behavior, you're violating the architecture.
+
+### 2. Testing as Process (Not Phase)
+
+Testing is not a phase at the end—it's a continuous process integrated throughout:
+
+```
+Code Change → Tests Run → Report to Health → Unified Dashboard
+                                                    ↓
+                                          Pass ✅ Ship / Fail 🚫 Block
+```
+
+**Key insight:** E2E tests verify behavior; Health system tracks data integrity. Both feed into a unified view of system health.
+
+### 3. Grove Architecture Rules
+
+**CRITICAL:** When working on Grove codebase, enforce these rules:
+
+| Rule | Violation | Correct Approach |
+|------|-----------|------------------|
+| No new handlers | Adding `handleFoo()` callback | Declarative config triggers action |
+| No hardcoded behavior | `if (lens === 'engineer')` | Config defines lens-specific behavior |
+| Behavior tests | Testing `toHaveClass('translate-x-0')` | Testing `toBeVisible()` |
+| State machines | Imperative state updates | XState declarative transitions |
+
+See `references/grove-architecture-rules.md` for full guidance.
 
 ## When to Use
 
@@ -44,7 +71,7 @@ Every sprint produces these in `docs/sprints/{sprint-name}/`:
 | `ARCHITECTURE.md` | Target state, schemas, data flows | Engine + Config design |
 | `MIGRATION_MAP.md` | File-by-file change plan | Execution plan |
 | `DECISIONS.md` | ADRs explaining "why" | Provenance |
-| `SPRINTS.md` | Epic/story breakdown | Execution plan |
+| `SPRINTS.md` | Epic/story breakdown **with tests** | Execution plan |
 | `EXECUTION_PROMPT.md` | Self-contained handoff | Execution capability |
 | `DEVLOG.md` | Execution tracking | Attribution chain |
 
@@ -52,41 +79,122 @@ Every sprint produces these in `docs/sprints/{sprint-name}/`:
 
 ### Phase 1: Repository Audit
 Analyze current state: files, architecture, patterns, technical debt.
+
 **DEX Check:** Identify what's hardcoded that should be declarative.
+**Test Check:** Identify existing test coverage and gaps.
+
 → Output: `REPO_AUDIT.md`
 
 ### Phase 2: Specification  
 Define goals, non-goals, acceptance criteria (including test requirements).
+
 **DEX Check:** Can acceptance be verified without code changes?
+**Test Check:** Are acceptance criteria testable? Include specific test commands.
+
 → Output: `SPEC.md`
 
 ### Phase 3: Architecture
 Design target state: data structures, file organization, API contracts.
+
 **DEX Check:** Is domain logic in configuration? Is the engine corpus-agnostic?
+**Test Check:** What behaviors need E2E tests? What contracts need integration tests?
+
 → Output: `ARCHITECTURE.md`
 
 ### Phase 4: Migration Planning
 Plan path: files to create/modify/delete, execution order, rollback plan.
+
+**Test Check:** Which tests verify each migration step?
+
 → Output: `MIGRATION_MAP.md`
 
 ### Phase 5: Decisions
 Document choices using ADR format with rejected alternatives.
+
 **DEX Check:** Do decisions preserve capability agnosticism?
+**Test Check:** Document testing strategy decisions (ADR for test approach).
+
 → Output: `DECISIONS.md`
 
 ### Phase 6: Story Breakdown
 Create executable plan: epics, stories, commit sequence, build gates.
+
+**MANDATORY:** Every epic MUST include test tasks. Every story should specify:
+- What tests to write or verify
+- Build gate commands
+- Health check expectations
+
 → Output: `SPRINTS.md`
 
 ### Phase 7: Execution Prompt
 Create self-contained handoff with context, code samples, verification commands.
+
+**Include:** Test commands, expected results, troubleshooting for test failures.
+
 → Output: `EXECUTION_PROMPT.md`
 
-### Phase 8: Testing (REQUIRED)
-Every sprint MUST include tests for critical paths. See `references/testing-requirements.md`.
-
-### Phase 9: Execution
+### Phase 8: Execution
 Hand off `EXECUTION_PROMPT.md`, track progress in `DEVLOG.md`.
+
+**Verify:** Tests pass after each epic. Health check passes. No regressions.
+
+## Testing Integration Requirements
+
+### Every SPRINTS.md Must Include
+
+```markdown
+## Epic N: {Feature}
+
+### Story N.1: Implement {feature}
+**Task:** ...
+**Tests:** 
+- Unit: `tests/unit/{feature}.test.ts`
+- E2E: Update `tests/e2e/{flow}.spec.ts` with behavior test
+
+### Story N.2: Add tests for {feature}
+**Task:** Write behavior-focused tests
+**Tests:**
+- [ ] Test user-visible behavior, not implementation
+- [ ] Use `toBeVisible()` not `toHaveClass()`
+- [ ] Tests report to Health system (if configured)
+
+### Build Gate
+```bash
+npm test                    # Unit + integration
+npx playwright test         # E2E behaviors  
+npm run health              # Health checks pass
+```
+```
+
+### Test Philosophy: Behavior Over Implementation
+
+**WRONG:**
+```typescript
+// Testing implementation details
+expect(element).toHaveClass('translate-x-0');
+expect(state.isOpen).toBe(true);
+```
+
+**RIGHT:**
+```typescript
+// Testing user-visible behavior
+await expect(terminal).toBeVisible();
+await expect(page.getByText('Welcome')).toBeVisible();
+```
+
+**Why:** Implementation changes (CSS classes, state shape) shouldn't break tests. User behavior (seeing content, clicking buttons) is what matters.
+
+### Health Integration
+
+For Grove projects, tests should report to the Health system:
+
+```
+Playwright Test → Health Reporter → POST /api/health/report → Health Log
+                                                                    ↓
+                            engagement check ← e2e-behavior type ← Health Config
+```
+
+This creates unified health monitoring where behavioral tests inform declarative health checks.
 
 ## DEX Compliance Checklist
 
@@ -96,6 +204,8 @@ Before finalizing any sprint, verify:
 - [ ] **Capability Agnosticism:** System works regardless of model capability
 - [ ] **Provenance:** All artifacts include attribution (who, when, why)
 - [ ] **Organic Scalability:** Works with minimal config, improves with more
+- [ ] **Tests as Process:** Tests run automatically, report to Health
+- [ ] **Behavior Focus:** Tests verify what users see, not implementation
 
 **The Test:** Can a non-technical domain expert alter behavior by editing a schema file, without recompiling the application? If no, the feature is incomplete.
 
@@ -109,7 +219,8 @@ Before finalizing any sprint, verify:
 ```bash
 npm run build    # Compiles
 npm test         # Unit tests pass
-npm run health   # Health check passes (if implemented)
+npx playwright test  # E2E tests pass
+npm run health   # Health check passes
 ```
 
 ## Templates and References
@@ -117,6 +228,7 @@ npm run health   # Health check passes (if implemented)
 - **Artifact templates:** See `references/templates.md`
 - **Testing requirements:** See `references/testing-requirements.md`
 - **Health report system:** See `references/health-report.md`
+- **Grove architecture rules:** See `references/grove-architecture-rules.md`
 - **Example sprints:** See `references/examples.md`
 
 ## Key Principles
@@ -124,8 +236,9 @@ npm run health   # Health check passes (if implemented)
 1. **Trellis First** — Structure precedes growth; build the frame before the vine
 2. **Declarative Sovereignty** — Domain logic in config, engine logic in code
 3. **Provenance as Infrastructure** — A fact without a root is a weed
-4. **Test Critical Paths** — Impact over coverage percentage
-5. **Sprints are Replayable** — EXECUTION_PROMPT is self-contained
+4. **Testing as Process** — Tests run continuously, report to Health
+5. **Behavior Over Implementation** — Test what users see, not internal state
+6. **Sprints are Replayable** — EXECUTION_PROMPT is self-contained
 
 ## Terminology
 
@@ -137,3 +250,5 @@ npm run health   # Health check passes (if implemented)
 | **Grove** | Accumulated, refined knowledge base |
 | **Vine** | Execution capability (LLM, RAG) — interchangeable and ephemeral |
 | **Gardener** | Human applying judgment (pruning) to AI-generated possibilities (growth) |
+| **Health** | Unified system monitoring (data integrity + behavioral tests) |
+| **Behavior Test** | Test verifying user-visible outcomes, not implementation details |

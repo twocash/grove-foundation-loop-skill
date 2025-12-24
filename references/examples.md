@@ -1,117 +1,213 @@
 # Example Sprints
 
-Real-world examples of the Foundation Loop methodology applied to actual development work.
+Real-world examples of the Foundation Loop methodology applied to actual development work, demonstrating testing as process and declarative architecture.
 
-## Example 1: Knowledge Architecture Refactoring
+## Example 1: Health Integration (Epic 0)
+
+**Sprint:** `engagement-phase2-epic0`
+**Problem:** E2E tests and Health system are disconnected; no unified view of system health
+**Solution:** Playwright reporter that POSTs results to Health API
+
+### REPO_AUDIT Key Findings
+- Health system: Declarative checks in `health-config.json`, engine interprets
+- E2E tests: 34 passing, but results only in HTML report
+- Gap: No connection between behavioral tests and Health monitoring
+
+### Key Decisions (ADRs)
+- **ADR-026:** Custom Playwright reporter (not post-test script)
+- **ADR-027:** Graceful degradation (never fail tests if Health unavailable)
+- **ADR-028:** `e2e-behavior` check type links Health to tests
+- **ADR-029:** POST to API (not direct file write)
+- **ADR-030:** Test reference format: `file.spec.ts:test name`
+
+### Test Strategy
+```typescript
+// Behavior-focused E2E tests
+test('lens selection persists across sessions', async ({ page }) => {
+  await selectLens(page, 'engineer');
+  await page.reload();
+  await expect(page.getByText('Engineer perspective')).toBeVisible();
+});
+
+// Health check references the behavior test
+{
+  "type": "e2e-behavior",
+  "test": "engagement-behaviors.spec.ts:lens selection persists"
+}
+```
+
+### Lessons Learned
+- Tests verify behavior (`toBeVisible()`), not implementation (`toHaveClass()`)
+- Health system becomes single source of truth for ALL health
+- Declarative pattern: Config defines which tests matter, engine evaluates
+
+---
+
+## Example 2: Engagement Context Refactor (Phase 2)
+
+**Sprint:** `engagement-migration-v1`
+**Problem:** 694-line monolithic NarrativeEngineContext with 40+ handlers
+**Solution:** Declarative EngagementContext with XState machine
+
+### REPO_AUDIT Key Findings
+
+**DEX Violations Found:**
+```typescript
+// ❌ Hardcoded handlers (40+ of these)
+const handleLensSelect = useCallback((lens) => {
+  setCurrentLens(lens);
+  localStorage.setItem('lens', lens);
+  // More imperative logic...
+}, []);
+```
+
+**Test Quality Issues:**
+```typescript
+// ❌ Implementation-focused test
+expect(element).toHaveClass('translate-x-0');
+
+// Needed: Behavior-focused test
+await expect(terminal).toBeVisible();
+```
+
+### Key Decisions (ADRs)
+- **ADR-020:** XState machine for state transitions
+- **ADR-021:** Declarative engagement config
+- **ADR-022:** Behavior tests as safety net
+- **ADR-023:** Adapter pattern for gradual migration
+
+### Target Architecture
+```
+src/core/engagement/
+├── EngagementContext.tsx      # Thin coordinator (~100 lines)
+├── machine.ts                 # XState state machine
+├── config/engagement-config.json  # Declarative behaviors
+└── hooks/
+    ├── useLensState.ts        # Extracted, focused
+    ├── useJourneyState.ts
+    └── useEntropyState.ts
+```
+
+### Test Strategy
+
+**Behavior Tests (safety net):**
+```typescript
+// These verify user experience, survive refactoring
+test('selecting lens updates view', async ({ page }) => {
+  await page.getByRole('button', { name: 'Engineer' }).click();
+  await expect(page.getByText('Technical details')).toBeVisible();
+});
+```
+
+**Migration Tests (track progress):**
+```json
+{
+  "id": "legacy-context-removed",
+  "type": "file-not-exists",
+  "file": "hooks/NarrativeEngineContext.tsx"
+}
+```
+
+### Story Structure
+| Epic | Focus | Health Checks |
+|------|-------|---------------|
+| 0 | Health integration | E2E → Health reporting |
+| 1 | State machine | Machine transitions valid |
+| 2 | Lens extraction | Lens state integrity |
+| 3 | Journey extraction | Journey transitions |
+| 4 | Entropy extraction | Entropy calculation |
+| 5 | Context assembly | All behaviors work |
+| 6 | Consumer migration | No legacy imports |
+| 7 | Legacy deletion | Files removed |
+
+---
+
+## Example 3: Knowledge Architecture Refactoring
 
 **Sprint:** `knowledge-architecture-v1`
 **Problem:** Monolithic 773-line JSON file mixing 8 different concerns
 **Solution:** Split into domain-specific files with schema validation
 
 ### REPO_AUDIT Key Findings
-- Single file `narratives.json` contained: journeys, nodes, hubs, lenses, feature flags, GCS mappings
-- Two different hub concepts (`hubs` vs `topicHubs`) doing similar things
-- Orphan journey with `hubId: null`
-- Inconsistent path patterns
+- Single file `narratives.json` contained: journeys, nodes, hubs, lenses
+- DEX violation: All domain logic in one file, hard to configure
+- No tests for schema integrity
 
 ### Key Decisions (ADRs)
-- **ADR-001:** Split by domain (exploration/, knowledge/, presentation/, infrastructure/)
-- **ADR-002:** Merge duplicate hub concepts
-- **ADR-003:** Standardize paths to `hubs/{id}/` pattern
-- **ADR-004:** Require non-null hubId for all journeys
-- **ADR-005:** Schema documentation becomes RAG content
-- **ADR-006:** Backward compatibility via fallback
+- **ADR-001:** Split by domain (exploration/, knowledge/, infrastructure/)
+- **ADR-002:** Schema validation as Health checks
+- **ADR-003:** Backward compatibility via fallback
 
-### Story Structure
-8 epics, 17 stories covering:
-1. Directory structure creation
-2. Hub extraction with new hub added
-3. Journey extraction with hubId fix
-4. Node extraction
-5. Server integration with fallback
-6. Schema validation script
-7. GCS content migration
-8. Documentation updates
+### Test Strategy
+
+**Schema Validation Tests:**
+```typescript
+test('all journey references resolve', () => {
+  for (const [id, journey] of Object.entries(journeys)) {
+    expect(hubs[journey.hubId], 
+      `Journey "${id}" references non-existent hub "${journey.hubId}"`
+    ).toBeDefined();
+  }
+});
+```
+
+**Behavior Tests:**
+```typescript
+test('user can navigate journey', async ({ page }) => {
+  await page.goto('/journey/grove-vision');
+  await expect(page.getByText('Welcome')).toBeVisible();
+  await page.getByRole('button', { name: 'Next' }).click();
+  await expect(page.getByText('Step 2')).toBeVisible();
+});
+```
 
 ### Lessons Learned
-- The split files deployed but `/api/narrative` still read from old file → caught by testing after deploy
-- Missing `nodes.json` in loader → would have been caught by schema tests
-- Step counter bug → would have been caught by journey navigation tests
+- Schema tests catch broken references before deploy
+- Behavior tests verify user experience survives refactoring
+- Health checks provide living documentation of system structure
 
 ---
 
-## Example 2: Automated Testing Infrastructure
+## Example 4: Testing Infrastructure
 
 **Sprint:** `automated-testing-v1`
 **Problem:** Zero automated tests; bugs only found in production
-**Solution:** Test framework + health report system
-
-### REPO_AUDIT Key Findings
-- No test files anywhere
-- `package.json` has no test scripts
-- Schema validation script exists but not integrated
-- Three bugs in previous sprint would have been caught by basic tests
+**Solution:** Test framework + health report + behavior-focused tests
 
 ### Key Decisions (ADRs)
-- **ADR-001:** Vitest for unit/integration (Vite-native, fast)
-- **ADR-002:** Playwright for E2E (reliable, cross-browser)
-- **ADR-003:** Test critical paths, not coverage percentage
+- **ADR-001:** Vitest for unit/integration (Vite-native)
+- **ADR-002:** Playwright for E2E (reliable, semantic queries)
+- **ADR-003:** Behavior over implementation (test what users see)
 - **ADR-004:** Health report as first-class feature
-- **ADR-005:** Integration into sprint methodology (update SKILL.md)
-- **ADR-006:** No mocking of LLM responses (test routing, not output)
-- **ADR-007:** Separate unit and integration test runs
+- **ADR-005:** Tests report to Health system
 
-### Story Structure
-9 epics, 32 stories covering:
-1. Framework setup (Vitest, Playwright, directories)
-2. Schema validation tests
-3. Journey navigation tests
-4. Health report system
-5. API contract tests
-6. RAG orchestration tests
-7. E2E smoke tests
-8. CI integration
-9. Documentation and methodology update
+### Test Philosophy Evolution
+
+**Before (implementation-focused):**
+```typescript
+// ❌ Brittle: breaks on CSS changes
+test('terminal opens', () => {
+  expect(element).toHaveClass('translate-x-0');
+  expect(state.isOpen).toBe(true);
+});
+```
+
+**After (behavior-focused):**
+```typescript
+// ✅ Stable: survives refactoring
+test('clicking tree opens terminal', async ({ page }) => {
+  await page.getByTestId('tree').click();
+  await expect(page.getByRole('region', { name: 'Terminal' })).toBeVisible();
+});
+```
 
 ### Test Categories Created
-| Category | Tests | Purpose |
-|----------|-------|---------|
-| Schema | 7 | Catch broken references |
-| Journey | 3 | Validate node chains |
-| API | 6 | Verify endpoint contracts |
-| RAG | 3 | Confirm hub routing |
-| E2E | 3 | Smoke test critical paths |
-
----
-
-## Example 3: Feature Flag System (Hypothetical)
-
-**Sprint:** `feature-flags-v1`
-**Problem:** No way to gradually roll out features
-**Solution:** Feature flag infrastructure with admin UI
-
-### REPO_AUDIT Would Cover
-- Current hardcoded feature toggles
-- Places where conditional logic exists
-- Existing admin interfaces
-- User session/auth system
-
-### ADRs Would Include
-- Flag storage (config file vs database)
-- Evaluation strategy (user %, random, specific users)
-- Admin interface approach
-- SDK vs direct checks
-- Default behavior when flag missing
-
-### Stories Would Cover
-1. Flag definition schema
-2. Flag storage implementation
-3. Flag evaluation logic
-4. React hook for flag checks
-5. Admin UI for flag management
-6. Tests for flag evaluation
-7. Migration of existing toggles
-8. Documentation
+| Category | Tests | Focus |
+|----------|-------|-------|
+| Schema | 7 | Data integrity |
+| Behavior | 15 | User experience |
+| API | 6 | Contracts |
+| Smoke | 3 | Critical paths |
 
 ---
 
@@ -121,29 +217,82 @@ Use this checklist when creating a new sprint:
 
 ### Planning Phase
 - [ ] Created sprint folder: `docs/sprints/{name}/`
-- [ ] REPO_AUDIT.md analyzes current state
-- [ ] SPEC.md defines clear goals and acceptance criteria
-- [ ] ARCHITECTURE.md shows target state
-- [ ] MIGRATION_MAP.md has file-by-file plan
-- [ ] DECISIONS.md documents key choices
-- [ ] SPRINTS.md breaks into executable stories
-- [ ] EXECUTION_PROMPT.md is self-contained
+- [ ] REPO_AUDIT.md analyzes current state AND test coverage
+- [ ] SPEC.md defines goals WITH test requirements
+- [ ] ARCHITECTURE.md shows target state AND test architecture
+- [ ] MIGRATION_MAP.md has file-by-file plan WITH test changes
+- [ ] DECISIONS.md documents testing strategy (ADR required)
+- [ ] SPRINTS.md breaks into stories WITH test tasks per epic
+- [ ] EXECUTION_PROMPT.md is self-contained WITH test commands
+
+### DEX Compliance
+- [ ] No new hardcoded handlers
+- [ ] Behavior in config, engine interprets
+- [ ] Non-developer can modify behavior
 
 ### Testing Phase
-- [ ] Test requirements identified
-- [ ] Test stories included in SPRINTS.md
-- [ ] Health checks defined for critical paths
-- [ ] CI integration planned
+- [ ] E2E tests verify user-visible behavior
+- [ ] Tests use semantic queries (`getByRole`, `toBeVisible()`)
+- [ ] No implementation tests (`toHaveClass()`, state checks)
+- [ ] Tests report to Health system (if configured)
+- [ ] Health checks reference behavior tests
 
 ### Execution Phase
-- [ ] DEVLOG.md tracking progress
+- [ ] DEVLOG.md tracking progress AND test results
 - [ ] Build gates verified after each epic
-- [ ] Smoke tests passing
+- [ ] All tests passing
 - [ ] Health check passing
 
 ### Completion
 - [ ] All acceptance criteria met
-- [ ] Tests passing: `npm test`
+- [ ] Tests passing: `npm run test:all`
 - [ ] Health check passing: `npm run health`
+- [ ] No DEX violations introduced
 - [ ] Documentation updated
 - [ ] Ready for deploy
+
+---
+
+## Anti-Patterns to Avoid
+
+### 1. Implementation-Focused Tests
+```typescript
+// ❌ WRONG
+expect(element).toHaveClass('translate-x-0');
+expect(state.isOpen).toBe(true);
+expect(mockHandler).toHaveBeenCalled();
+
+// ✅ RIGHT
+await expect(terminal).toBeVisible();
+await expect(page.getByText('Welcome')).toBeVisible();
+```
+
+### 2. Hardcoded Handlers
+```typescript
+// ❌ WRONG
+const handleLensChange = (lens) => {
+  if (lens === 'engineer') { ... }
+};
+
+// ✅ RIGHT
+const lensConfig = config[lens];
+applyConfig(lensConfig);
+```
+
+### 3. Testing Phase at End
+```
+// ❌ WRONG
+Epic 1 → Epic 2 → Epic 3 → Epic 4: Write Tests
+
+// ✅ RIGHT
+Epic 1 + Tests → Epic 2 + Tests → Epic 3 + Tests
+```
+
+### 4. Disconnected Health Checks
+```json
+// ❌ WRONG: Manual check, no test reference
+{ "name": "Lens works", "type": "manual" }
+
+// ✅ RIGHT: References behavior test
+{ "type": "e2e-behavior", "test": "engagement.spec.ts:lens selection" }
+```

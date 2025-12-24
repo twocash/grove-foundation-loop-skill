@@ -1,57 +1,122 @@
-# Grove Foundation Loop
+# Grove Foundation Loop Skill
 
-A structured sprint planning methodology for software development that produces 8 planning artifacts, embeds automated testing, and enables clean handoff to execution agents.
-
-## What It Does
-
-The Foundation Loop transforms chaotic development into systematic sprints:
-
-1. **Repository Audit** → Understand current state
-2. **Specification** → Define goals and acceptance criteria
-3. **Architecture** → Design target state
-4. **Migration Map** → Plan file-by-file changes
-5. **Decisions** → Document "why" with ADRs
-6. **Stories** → Break into executable tasks
-7. **Execution Prompt** → Create self-contained handoff
-8. **Testing** → Validate critical paths
-9. **Execution** → Track progress
+A Claude skill for structured sprint planning implementing the **Trellis Architecture** and **DEX (Declarative Exploration)** standard. Produces 8 planning artifacts, embeds testing as continuous process, and enables clean handoff to execution agents.
 
 ## Quick Start
 
-Initialize a new sprint:
-```bash
-node scripts/init-sprint.js my-feature-v1 --path ./docs/sprints
+1. Copy this skill to your Claude project's skills folder
+2. In conversation, say: "Let's start a Foundation Loop for {feature}"
+3. Claude will generate all 8 artifacts with test requirements
+
+## Core Principles
+
+### 1. Trellis Architecture
+- **Declarative Sovereignty** — Domain logic in config, not code
+- **Capability Agnosticism** — Structure provides validity, not the model
+- **Provenance as Infrastructure** — Attribution chains on all artifacts
+
+### 2. Testing as Process
+Testing is not a phase—it's continuous:
+```
+Code → Tests → Health Report → Unified Dashboard
 ```
 
-This creates all 8 artifact templates ready to fill in.
+### 3. Behavior Over Implementation
+```typescript
+// ❌ WRONG
+expect(element).toHaveClass('translate-x-0');
 
-## Skill Structure
+// ✅ RIGHT
+await expect(terminal).toBeVisible();
+```
+
+## The 8 Artifacts
+
+| Artifact | Purpose |
+|----------|---------|
+| `REPO_AUDIT.md` | Current state + test coverage analysis |
+| `SPEC.md` | Goals + acceptance criteria + test requirements |
+| `ARCHITECTURE.md` | Target design + test architecture |
+| `MIGRATION_MAP.md` | File changes + test changes |
+| `DECISIONS.md` | ADRs including testing strategy |
+| `SPRINTS.md` | Stories with test tasks per epic |
+| `EXECUTION_PROMPT.md` | Handoff with test commands |
+| `DEVLOG.md` | Execution + test result tracking |
+
+## Grove Architecture Rules
+
+When working on Grove codebase:
+
+| Rule | Violation | Correct |
+|------|-----------|---------|
+| No new handlers | `handleFoo()` | Config → Engine |
+| No hardcoded behavior | `if (type === 'x')` | Config lookup |
+| Behavior tests | `toHaveClass()` | `toBeVisible()` |
+
+See `references/grove-architecture-rules.md` for details.
+
+## File Structure
 
 ```
 grove-foundation-loop-skill/
-├── SKILL.md                    # Core methodology
+├── SKILL.md                              # Main skill definition
+├── README.md                             # This file
 ├── references/
-│   ├── templates.md            # All artifact templates
-│   ├── testing-requirements.md # Test pyramid, requirements
-│   ├── health-report.md        # Diagnostic system design
-│   └── examples.md             # Real sprint examples
+│   ├── templates.md                      # Artifact templates
+│   ├── testing-requirements.md           # Testing philosophy + patterns
+│   ├── health-report.md                  # Health system integration
+│   ├── grove-architecture-rules.md       # Declarative patterns
+│   └── examples.md                       # Real sprint examples
 └── scripts/
-    └── init-sprint.js          # Sprint initializer
+    └── init-sprint.js                    # Sprint folder initialization
 ```
 
-## Key Principles
+## Testing Integration
 
-1. **Plan before coding** — Artifacts save more time than they cost
-2. **Test critical paths** — Impact over coverage percentage
-3. **Document decisions** — Future you will thank present you
-4. **Health checks mandatory** — Human-readable status at all times
-5. **Sprints are replayable** — EXECUTION_PROMPT is self-contained
+Every sprint includes:
 
-## Using as a Claude Skill
+### SPRINTS.md Test Tasks
+```markdown
+### Story 1.2: Write tests for {feature}
+**Task:** Add behavior-focused E2E tests
+**Tests:**
+- [ ] Use `toBeVisible()`, not `toHaveClass()`
+- [ ] Test user outcomes, not implementation
+```
 
-This is designed as a skill for Claude. The SKILL.md file contains frontmatter that tells Claude when to use this methodology:
+### Build Gates
+```bash
+npm run build
+npm test
+npx playwright test  # Reports to Health
+npm run health       # Unified check
+```
 
-> Use when the user wants to plan a sprint, refactor code, add features, or execute any multi-phase development work.
+### Health Integration
+```json
+{
+  "type": "e2e-behavior",
+  "test": "feature.spec.ts:user can do thing"
+}
+```
+
+## Usage Triggers
+
+The skill activates on:
+- "Let's plan a sprint"
+- "Foundation Loop"
+- "Trellis" / "DEX"
+- "Refactor {thing}"
+- "Add feature {thing}"
+- "Create sprint for {thing}"
+
+## References
+
+- **Testing Philosophy**: `references/testing-requirements.md`
+- **Architecture Rules**: `references/grove-architecture-rules.md`
+- **Health System**: `references/health-report.md`
+- **Templates**: `references/templates.md`
+- **Examples**: `references/examples.md`
 
 ## License
 
