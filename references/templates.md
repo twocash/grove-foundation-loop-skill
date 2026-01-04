@@ -72,6 +72,34 @@
 ## Overview
 {One paragraph summary of what this sprint accomplishes}
 
+## Patterns Extended (MANDATORY)
+
+**Per PROJECT_PATTERNS.md Phase 0 requirements:**
+
+| Requirement | Existing Pattern | Extension Approach |
+|-------------|------------------|-------------------|
+| {Need 1} | {Pattern from catalog} | {How extending} |
+| {Need 2} | {Pattern from catalog} | {How extending} |
+
+### New Patterns Proposed
+
+None required. All needs met by extending existing patterns.
+
+*— OR, if genuinely new pattern needed: —*
+
+### Proposed: {New Pattern Name}
+
+**Why existing patterns are insufficient:**
+{Detailed explanation why Quantum Interface, Engagement Machine, etc. don't cover this}
+
+**DEX Pillar compliance:**
+- **Declarative Sovereignty:** {How domain experts can modify behavior via config}
+- **Capability Agnosticism:** {How this works regardless of underlying model}
+- **Provenance:** {How attribution is tracked}
+- **Organic Scalability:** {How it grows without restructuring}
+
+**⚠️ Approval required before proceeding with new pattern.**
+
 ## Goals
 1. {Primary goal}
 2. {Secondary goal}
@@ -611,4 +639,179 @@ npm run health
 - [ ] No new hardcoded handlers
 - [ ] Documentation updated
 - [ ] Ready for deploy
+```
+
+
+---
+
+## CONTINUATION_PROMPT.md Template
+
+```markdown
+# {Initiative Name} — Continuation Prompt
+
+**Use this prompt in a fresh Claude context window to continue work.**
+
+---
+
+## Context
+
+{2-3 sentences explaining what this initiative is about and current status}
+
+## Project Location
+
+```
+{absolute/path/to/project}
+```
+
+## What Was Accomplished
+
+### Strategic Analysis
+- {Key discovery or decision 1}
+- {Key discovery or decision 2}
+
+### Documentation Created
+All artifacts are in `docs/sprints/`:
+
+**Master Roadmap:**
+- `docs/sprints/ROADMAP.md` — {description}
+
+**Sprint {N} Foundation Loop:**
+- `docs/sprints/{sprint-name}/INDEX.md` — Navigation
+- `docs/sprints/{sprint-name}/REPO_AUDIT.md` — {description}
+- `docs/sprints/{sprint-name}/SPEC.md` — {description}
+- `docs/sprints/{sprint-name}/ARCHITECTURE.md` — {description}
+- `docs/sprints/{sprint-name}/MIGRATION_MAP.md` — {description}
+- `docs/sprints/{sprint-name}/DECISIONS.md` — {description}
+- `docs/sprints/{sprint-name}/SPRINTS.md` — {description}
+- `docs/sprints/{sprint-name}/EXECUTION_PROMPT.md` — {description}
+- `docs/sprints/{sprint-name}/DEVLOG.md` — {description}
+
+### Key Technical Decisions
+1. **{Decision}** — {Brief rationale}
+2. **{Decision}** — {Brief rationale}
+3. **{Decision}** — {Brief rationale}
+
+## Sprint Roadmap
+
+| Sprint | Name | Days | Status |
+|--------|------|------|--------|
+| 1 | {name} | {est} | 🟡 Ready / ✅ Done |
+| 2 | {name} | {est} | 📋 Planned |
+| 3 | {name} | {est} | 📋 Planned |
+
+## Your Task
+
+### If Sprint {N} is COMPLETE:
+
+1. **Review completion:**
+   - Read `docs/sprints/{sprint-name}/DEVLOG.md` for execution notes
+   - Check if tests pass
+   - Verify acceptance criteria met
+
+2. **Create Sprint {N+1} Foundation Loop:**
+   - Follow same artifact structure
+   - Reference ROADMAP.md for scope
+
+3. **Update ROADMAP.md:**
+   - Mark Sprint {N} complete
+   - Add any lessons learned
+
+### If Sprint {N} is NOT YET EXECUTED:
+
+1. **Confirm ready for execution:**
+   - Review EXECUTION_PROMPT.md
+   - Ensure no blockers
+
+2. **Guide execution:**
+   - Execution prompt at: `docs/sprints/{sprint-name}/EXECUTION_PROMPT.md`
+
+## Files to Read First
+
+Before doing anything, read these to understand current state:
+
+```
+1. docs/sprints/ROADMAP.md (master plan, all context)
+2. docs/sprints/{sprint-name}/INDEX.md (sprint overview)
+3. docs/sprints/{sprint-name}/DEVLOG.md (execution status)
+```
+
+## Critical Context
+
+- **{Important thing}** — {Details}
+- **{Another thing}** — {Details}
+- **{Technical constraint}** — {Details}
+
+## Questions to Ask User
+
+If you need clarification:
+1. "Has Sprint {N} been executed yet?"
+2. "Any issues during execution?"
+3. "Ready to plan Sprint {N+1}, or need to review first?"
+
+---
+
+**Start by reading the ROADMAP.md to orient yourself, then check sprint status.**
+```
+
+---
+
+## INDEX.md Template (Sprint Navigation)
+
+```markdown
+# {Sprint Name} — Sprint Index
+
+**Sprint:** {Sprint Name}  
+**Status:** 🟡 Ready for Execution / ✅ Complete  
+**Created:** {YYYY-MM-DD}
+
+---
+
+## Quick Links
+
+| Artifact | Purpose |
+|----------|---------|
+| [REPO_AUDIT.md](./REPO_AUDIT.md) | Current state analysis |
+| [SPEC.md](./SPEC.md) | Goals, acceptance criteria |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | Target state design |
+| [MIGRATION_MAP.md](./MIGRATION_MAP.md) | File-by-file changes |
+| [DECISIONS.md](./DECISIONS.md) | Architectural decisions |
+| [SPRINTS.md](./SPRINTS.md) | Story breakdown |
+| **[EXECUTION_PROMPT.md](./EXECUTION_PROMPT.md)** | **Claude Code handoff** |
+| [DEVLOG.md](./DEVLOG.md) | Execution tracking |
+
+---
+
+## Parent Documents
+
+| Document | Purpose |
+|----------|---------|
+| [../ROADMAP.md](../ROADMAP.md) | Multi-sprint master plan |
+| [../CONTINUATION_PROMPT.md](../CONTINUATION_PROMPT.md) | Session handoff |
+
+---
+
+## How to Execute
+
+1. Open Claude Code CLI
+2. Navigate to repository root
+3. Run: `cat docs/sprints/{sprint-name}/EXECUTION_PROMPT.md`
+4. Follow the phased execution plan
+
+---
+
+## Sprint Summary
+
+**Objective:** {One sentence}
+
+**Scope:**
+- {Key deliverable 1}
+- {Key deliverable 2}
+- {Key deliverable 3}
+
+**Duration:** {X} days
+
+**Success Criteria:**
+- {Criterion 1}
+- {Criterion 2}
+- {Criterion 3}
 ```
